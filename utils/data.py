@@ -81,7 +81,7 @@ def get_cdn_performance() -> pd.DataFrame:
 def get_region_breakdown() -> pd.DataFrame:
     viewers = [9000, 5500, 3200, 2800, 2100, 1800]
     viewers = [v + random.randint(-200, 200) for v in viewers]
-    return pd.DataFrame({"Région": REGIONS, "Viewers": viewers})
+    return pd.DataFrame({"Region": REGIONS, "Viewers": viewers})
 
 
 def get_device_breakdown() -> pd.DataFrame:
