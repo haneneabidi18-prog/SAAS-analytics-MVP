@@ -3,31 +3,40 @@ import pandas as pd
 from datetime import datetime, timedelta
 import random
 
-# ── Seed reproductible pour la session ──────────────────────────────────────
-random.seed(42)
-np.random.seed(42)
-
 CDN_LIST = ["CDN-FR2", "CDN-EU1", "CDN-US1", "CDN-ASIA1"]
 REGIONS   = ["France", "Allemagne", "Espagne", "UK", "USA", "Asie"]
 DEVICES   = ["Desktop", "Mobile", "Smart TV", "Tablet"]
 
+# Rafraichissement toutes les 30 secondes
+REFRESH_INTERVAL = 30
+
+
+def _get_seed() -> int:
+    """Seed base sur la tranche de 30s — identique sur toutes les pages."""
+    return int(datetime.now().timestamp() // REFRESH_INTERVAL)
+
 
 def get_live_metrics() -> dict:
-    """Simule les métriques live avec un peu de bruit."""
+    """
+    Simule les metriques live.
+    Seed base sur le temps -> valeurs IDENTIQUES sur toutes les pages
+    pendant 30 secondes, puis changement synchronise.
+    """
+    rng = random.Random(_get_seed())
     now = datetime.now()
     base_viewers = 24000 + int(3000 * np.sin(now.hour * np.pi / 12))
     return {
-        "viewers":        base_viewers + random.randint(-500, 500),
-        "bitrate_avg":    round(4.2 + random.uniform(-0.4, 0.4), 2),
-        "rebuffer_rate":  round(0.8 + random.uniform(-0.2, 0.4), 2),
-        "latency_p95":    round(3.1 + random.uniform(-0.3, 0.5), 2),
-        "error_rate":     round(0.3 + random.uniform(-0.1, 0.2), 2),
-        "startup_time":   round(2.4 + random.uniform(-0.3, 0.6), 2),
-        "cdn_health":     {
-            "CDN-FR2":   round(99.2 + random.uniform(-0.5, 0.3), 1),
-            "CDN-EU1":   round(94.1 + random.uniform(-2.0, 0.5), 1),
-            "CDN-US1":   round(98.7 + random.uniform(-0.3, 0.3), 1),
-            "CDN-ASIA1": round(97.3 + random.uniform(-0.5, 0.5), 1),
+        "viewers":       base_viewers + rng.randint(-500, 500),
+        "bitrate_avg":   round(4.2 + rng.uniform(-0.4, 0.4), 2),
+        "rebuffer_rate": round(0.8 + rng.uniform(-0.2, 0.4), 2),
+        "latency_p95":   round(3.1 + rng.uniform(-0.3, 0.5), 2),
+        "error_rate":    round(0.3 + rng.uniform(-0.1, 0.2), 2),
+        "startup_time":  round(2.4 + rng.uniform(-0.3, 0.6), 2),
+        "cdn_health":    {
+            "CDN-FR2":   round(99.2 + rng.uniform(-0.5, 0.3), 1),
+            "CDN-EU1":   round(94.1 + rng.uniform(-2.0, 0.5), 1),
+            "CDN-US1":   round(98.7 + rng.uniform(-0.3, 0.3), 1),
+            "CDN-ASIA1": round(97.3 + rng.uniform(-0.5, 0.5), 1),
         },
         "timestamp": now,
     }
