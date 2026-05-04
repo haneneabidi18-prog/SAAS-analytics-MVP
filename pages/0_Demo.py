@@ -13,7 +13,7 @@ st.set_page_config(
     page_title="StreamAnalytics Pro — Demo",
     page_icon="🚀",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # ── CSS Demo ──────────────────────────────────────────────────────────────────
@@ -24,7 +24,6 @@ st.markdown("""
 html, body, [class*="css"] { font-family: 'Space Grotesk', sans-serif; }
 
 .stApp { background: #07070f; }
-[data-testid="stSidebar"] { display: none; }
 
 /* Header demo */
 .demo-header {
@@ -125,6 +124,18 @@ div[data-testid="metric-container"] [data-testid="stMetricValue"] {
 }
 </style>
 """, unsafe_allow_html=True)
+
+# ── Sidebar ─────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown("<div style='text-align:center;padding:15px 0 5px;font-size:22px;'>📡</div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align:center;font-size:18px;font-weight:700;color:#7F77DD;'>StreamAnalytics</div>", unsafe_allow_html=True)
+    st.divider()
+    if st.button("Dashboard",           use_container_width=True): st.switch_page("pages/1_Dashboard.py")
+    if st.button("QoE Score",           use_container_width=True): st.switch_page("pages/2_QoE_Score.py")
+    if st.button("AI Decision Engine",  use_container_width=True): st.switch_page("pages/3_AI_Decision_Engine.py")
+    if st.button("AI Copilot",          use_container_width=True): st.switch_page("pages/4_AI_Copilot.py")
+    if st.button("Analyse de Logs",     use_container_width=True): st.switch_page("pages/5_Analyse_Logs.py")
+    if st.button("Demo Interactive",    use_container_width=True): pass
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -421,5 +432,6 @@ with col_roi:
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown("""
 <div style='text-align:center;border-top:1px solid #2a2a4a;padding-top:24px;color:#404060;font-size:12px;'>
+    StreamAnalytics Pro · Demo Commerciale · Powered by Claude AI · contact@streamanalytics.pro
 </div>
 """, unsafe_allow_html=True)
