@@ -84,6 +84,6 @@ with col_btn2:
     if st.button("Dashboard", use_container_width=True):
         st.switch_page("pages/1_Dashboard.py")
 
-st.markdown("<div style='text-align:center;margin-top:50px;color:#555;font-size:13px;'>StreamAnalytics Pro · Powered by Claude AI · v2.0</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center;margin-top:50px;color:#555;font-size:13px;'>StreamAnalytics Pro · Powered by ABIDSON/div>", unsafe_allow_html=True)
 
 # Demo button added
