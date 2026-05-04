@@ -421,6 +421,5 @@ with col_roi:
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown("""
 <div style='text-align:center;border-top:1px solid #2a2a4a;padding-top:24px;color:#404060;font-size:12px;'>
-    StreamAnalytics Pro · Demo Commerciale · Powered by Claude AI · contact@streamanalytics.pro
 </div>
 """, unsafe_allow_html=True)
