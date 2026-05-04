@@ -8,7 +8,7 @@ REGIONS   = ["France", "Allemagne", "Espagne", "UK", "USA", "Asie"]
 DEVICES   = ["Desktop", "Mobile", "Smart TV", "Tablet"]
 
 # Rafraichissement toutes les 30 secondes
-REFRESH_INTERVAL = 600
+REFRESH_INTERVAL = 30
 
 
 def _get_seed() -> int:
