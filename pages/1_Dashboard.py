@@ -5,6 +5,8 @@ sys.path.append(str(Path(__file__).parent.parent))
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
+from utils.auth import require_auth, show_sidebar_user
+require_auth()
 
 from utils.data import get_live_metrics, get_timeseries, get_cdn_performance, get_region_breakdown, get_device_breakdown
 from utils.qoe  import compute_qoe
@@ -33,6 +35,8 @@ div[data-testid="metric-container"] [data-testid="stMetricValue"] { color: #ffff
 with st.sidebar:
     st.markdown("<div style='text-align:center;padding:15px 0 5px;font-size:22px;'>📡</div>", unsafe_allow_html=True)
     st.markdown("<div style='text-align:center;font-size:18px;font-weight:700;color:#7F77DD;'>StreamAnalytics</div>", unsafe_allow_html=True)
+    show_sidebar_user() 
+    
     st.divider()
     auto_refresh = st.toggle("Refresh auto (30s)", value=False)
     st.markdown("---")

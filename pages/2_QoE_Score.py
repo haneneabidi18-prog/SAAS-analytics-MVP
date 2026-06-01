@@ -3,6 +3,8 @@ import plotly.graph_objects as go
 import plotly.express as px
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from utils.auth import require_premium, show_sidebar_user
+require_premium("QoE Score")   # ← remplace par le nom de la page
 
 from utils.data import get_live_metrics, get_timeseries
 from utils.qoe  import compute_qoe, LABELS, WEIGHTS
@@ -23,6 +25,8 @@ st.markdown("""
 with st.sidebar:
     st.markdown("<div style='text-align:center;padding:15px 0 5px;font-size:22px;'>📡</div>", unsafe_allow_html=True)
     st.markdown("<div style='text-align:center;font-size:18px;font-weight:700;color:#7F77DD;'>StreamAnalytics</div>", unsafe_allow_html=True)
+    show_sidebar_user() 
+    
     st.divider()
     if st.button("📊 Dashboard",          use_container_width=True): st.switch_page("pages/1_📊_Dashboard.py")
     if st.button("🎯 QoE Score",          use_container_width=True): pass
