@@ -160,8 +160,14 @@ def _show_upgrade_wall(page_name: str):
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("🚀 Passer au plan Premium", use_container_width=True, type="primary"):
-            st.info("Contactez-nous : contact@streamanalytics.pro")
+        if st.button("🚀 Passer au plan Premium — 149€/mois", use_container_width=True, type="primary"):
+            from utils.payments import get_payment_link
+            email = st.session_state.get("email", "")
+            username = st.session_state.get("username", "")
+            payment_link = get_payment_link()
+            url = f"{payment_link}?prefilled_email={email}&client_reference_id={username}"
+            st.markdown(f"<meta http-equiv='refresh' content='0; url={url}'>", unsafe_allow_html=True)
+            st.markdown(f"[Cliquez ici si vous n'êtes pas redirigé]({url})")
         if st.button("← Retour au Dashboard", use_container_width=True):
             st.switch_page("pages/1_Dashboard.py")
 
