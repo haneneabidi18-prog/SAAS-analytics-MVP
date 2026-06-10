@@ -65,11 +65,20 @@ session_id     = params.get("session_id", "")
 if payment_status == "success":
     st.query_params.clear()
     if is_authenticated():
-        upgrade_to_premium(st.session_state.get("username", ""), session_id)
+        username = st.session_state.get("username", "")
+        result = upgrade_to_premium(username, session_id)
+        st.write(f"DEBUG — username: {username}, upgrade result: {result}")  # ← temporaire
         st.session_state["plan"] = "premium"
-        st.success("🎉 Paiement confirmé ! Votre compte est maintenant Premium.")
-    else:
-        st.success("🎉 Paiement confirmé ! Connectez-vous pour accéder à Premium.")
+        st.rerun()
+        
+# ── if payment_status == "success":
+   # ──  st.query_params.clear()
+  # ──   if is_authenticated():
+   # ──      upgrade_to_premium(st.session_state.get("username", ""), session_id)
+   # ──      st.session_state["plan"] = "premium"
+   # ──      st.success("🎉 Paiement confirmé ! Votre compte est maintenant Premium.")
+  # ──   else:
+   # ──      st.success("🎉 Paiement confirmé ! Connectez-vous pour accéder à Premium.")
 
 elif payment_status == "cancelled":
     st.query_params.clear()
