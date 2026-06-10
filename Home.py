@@ -4,10 +4,10 @@ sys.path.append(str(Path(__file__).parent))
 
 import streamlit as st
 from utils.auth import is_authenticated, logout, PLANS
-from utils.db   import authenticate_user, create_user, upgrade_to_premium, get_user_by_username
+from utils.db import authenticate_user, create_user, upgrade_to_premium, get_user_by_username, get_supabase
 from utils.payments import get_payment_link, verify_payment_session
 
-# TEST SUPABASE — supprimer après debug
+# TEST SUPABASE — a supprimer après debug
 sb = get_supabase()
 if sb:
     try:
@@ -17,7 +17,7 @@ if sb:
         st.error(f"Erreur Supabase: {e}")
 else:
     st.error("Supabase non connecté")
-    
+
 st.set_page_config(
     page_title="StreamAnalytics Pro",
     page_icon="📡",
