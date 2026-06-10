@@ -118,18 +118,18 @@ def authenticate_user(username: str, password: str) -> tuple[bool, dict | None, 
      # ──    return False
 
 def upgrade_to_premium(username: str, stripe_session_id: str = "") -> bool:
-    """Passe l'utilisateur en plan premium après paiement."""
-    sb = get_supabase()
-    if not sb:
-        st.error("Supabase non configuré")
-        return False
     try:
+        from supabase import create_client
+        url = st.secrets["SUPABASE_URL"]
+        key = st.secrets["SUPABASE_KEY"]
+        sb  = create_client(url, key)
+
         result = sb.table("users").update({
             "plan": "premium",
             "stripe_session_id": stripe_session_id,
-        }).eq("username", username.lower()).execute()
-        st.write("DEBUG upgrade:", result)  # temporaire
-        return True
+        }).eq("username", username.lower().strip()).execute()
+
+        return len(result.data) > 0
     except Exception as e:
         st.error(f"Erreur upgrade: {e}")
         return False
