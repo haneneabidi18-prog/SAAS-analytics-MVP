@@ -102,22 +102,38 @@ def authenticate_user(username: str, password: str) -> tuple[bool, dict | None, 
         return False, None, f"Erreur de connexion : {e}"
 
 
+# ── def upgrade_to_premium(username: str, stripe_session_id: str = "") -> bool:
+  # ──   """Passe l'utilisateur en plan premium après paiement."""
+ # ──    sb = get_supabase()
+ # ──    if not sb:
+  # ──       return False
+  # ──   try:
+  # ──       sb.table("users").update({
+   # ──          "plan":              "premium",
+   # ──          "stripe_session_id": stripe_session_id,
+    # ──         "updated_at":        datetime.now().isoformat(),
+    # ──     }).eq("username", username.lower()).execute()
+     # ──    return True
+    # ── except Exception:
+     # ──    return False
+
 def upgrade_to_premium(username: str, stripe_session_id: str = "") -> bool:
     """Passe l'utilisateur en plan premium après paiement."""
     sb = get_supabase()
     if not sb:
+        st.error("Supabase non configuré")
         return False
     try:
-        sb.table("users").update({
-            "plan":              "premium",
+        result = sb.table("users").update({
+            "plan": "premium",
             "stripe_session_id": stripe_session_id,
-            "updated_at":        datetime.now().isoformat(),
         }).eq("username", username.lower()).execute()
+        st.write("DEBUG upgrade:", result)  # temporaire
         return True
-    except Exception:
+    except Exception as e:
+        st.error(f"Erreur upgrade: {e}")
         return False
-
-
+    
 def get_user_by_username(username: str) -> dict | None:
     sb = get_supabase()
     if not sb:
