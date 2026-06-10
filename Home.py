@@ -7,6 +7,17 @@ from utils.auth import is_authenticated, logout, PLANS
 from utils.db   import authenticate_user, create_user, upgrade_to_premium, get_user_by_username
 from utils.payments import get_payment_link, verify_payment_session
 
+# TEST SUPABASE — supprimer après debug
+sb = get_supabase()
+if sb:
+    try:
+        result = sb.table("users").select("username, plan").execute()
+        st.write("Supabase OK — users:", result.data)
+    except Exception as e:
+        st.error(f"Erreur Supabase: {e}")
+else:
+    st.error("Supabase non connecté")
+    
 st.set_page_config(
     page_title="StreamAnalytics Pro",
     page_icon="📡",
@@ -70,7 +81,7 @@ if payment_status == "success":
         st.write(f"DEBUG — username: {username}, upgrade result: {result}")  # ← temporaire
         st.session_state["plan"] = "premium"
         st.rerun()
-        
+
 # ── if payment_status == "success":
    # ──  st.query_params.clear()
   # ──   if is_authenticated():
