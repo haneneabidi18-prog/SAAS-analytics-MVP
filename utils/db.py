@@ -144,6 +144,36 @@ def get_user_by_username(username: str) -> dict | None:
     except Exception:
         return None
 
+def save_pending_upgrade(username: str) -> bool:
+    """Sauvegarde l'intention d'upgrade avant redirection Stripe."""
+    try:
+        from supabase import create_client
+        sb = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+        sb.table("pending_upgrades").insert({"username": username.lower()}).execute()
+        return True
+    except Exception as e:
+        st.error(f"Erreur: {e}")
+        return False
+
+
+def get_and_clear_pending_upgrade() -> str:
+    """Récupère et supprime le dernier upgrade en attente (30 dernières min)."""
+    try:
+        from supabase import create_client
+        sb = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+        result = sb.table("pending_upgrades")\
+            .select("*")\
+            .order("created_at", desc=True)\
+            .limit(1)\
+            .execute()
+        if result.data:
+            row = result.data[0]
+            # Supprimer l'entrée
+            sb.table("pending_upgrades").delete().eq("id", row["id"]).execute()
+            return row["username"]
+        return ""
+    except Exception:
+        return ""
 
 # ── Fallback secrets.toml (si Supabase pas encore configuré) ─────────────────
 def _auth_from_secrets(username: str, password: str) -> tuple[bool, dict | None, str]:
