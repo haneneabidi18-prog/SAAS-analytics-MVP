@@ -5,6 +5,7 @@ sys.path.append(str(Path(__file__).parent))
 import streamlit as st
 from utils.auth     import is_authenticated, logout
 from utils.payments import get_payment_link
+from utils.org import get_organization
 
 # ── Helpers Supabase directs ──────────────────────────────────────────────────
 def get_sb():
@@ -215,19 +216,28 @@ with tab_login:
     st.markdown("<br>", unsafe_allow_html=True)
 
     if st.button("Se connecter", use_container_width=True, key="btn_login"):
-        if not l_user or not l_pwd:
-            st.error("Veuillez renseigner tous les champs.")
-        else:
-            user, error = auth_user(l_user, l_pwd)
-            if user:
-                st.session_state["authenticated"] = True
-                st.session_state["username"]      = user["username"]
-                st.session_state["display_name"]  = user.get("display_name", l_user.title())
-                st.session_state["plan"]          = user.get("plan", "basic")
-                st.session_state["email"]         = user.get("email", "")
-                st.switch_page("pages/1_Dashboard.py")
+    if not l_user or not l_pwd:
+        st.error("Veuillez renseigner tous les champs.")
+    else:
+        user, error = auth_user(l_user, l_pwd)
+        if user:
+            st.session_state["authenticated"] = True
+            st.session_state["username"]      = user["username"]
+            st.session_state["display_name"]  = user.get("display_name", l_user.title())
+            st.session_state["plan"]          = user.get("plan", "basic")
+            st.session_state["email"]         = user.get("email", "")
+            st.session_state["role"]          = user.get("role", "member")
+
+            # Charger l'organisation si l'utilisateur en fait partie
+            org_id = user.get("org_id")
+            if org_id:
+                st.session_state["org"] = get_organization(org_id)
             else:
-                st.error(error)
+                st.session_state["org"] = None
+
+            st.switch_page("pages/1_Dashboard.py")
+        else:
+            st.error(error)
 
     st.markdown("""
     <div style='text-align:center;margin-top:14px;font-size:12px;color:#404060;'>
