@@ -1,9 +1,11 @@
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))
+from utils.auth import require_premium, show_sidebar_user, is_org_admin, is_super_admin
+require_premium("AI Copilot")
+
 import streamlit as st
 import anthropic
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from utils.auth import require_premium, show_sidebar_user
-require_premium("QoE Score")   # ← remplace par le nom de la page
 
 from utils.data import get_live_metrics
 from utils.qoe  import compute_qoe
@@ -28,18 +30,29 @@ st.markdown("""
 with st.sidebar:
     st.markdown("<div style='text-align:center;padding:15px 0 5px;font-size:22px;'>📡</div>", unsafe_allow_html=True)
     st.markdown("<div style='text-align:center;font-size:18px;font-weight:700;color:#7F77DD;'>StreamAnalytics</div>", unsafe_allow_html=True)
-    show_sidebar_user() 
-    
+    show_sidebar_user()
     st.divider()
-    if st.button("📊 Dashboard",          use_container_width=True): st.switch_page("pages/1_📊_Dashboard.py")
-    if st.button("🎯 QoE Score",          use_container_width=True): st.switch_page("pages/2_🎯_QoE_Score.py")
-    if st.button("🧠 AI Decision Engine", use_container_width=True): st.switch_page("pages/3_🧠_AI_Decision_Engine.py")
-    if st.button("🤖 AI Copilot",         use_container_width=True): pass
+    if st.button("Dashboard",          use_container_width=True): st.switch_page("pages/1_Dashboard.py")
+    if st.button("QoE Score",          use_container_width=True): st.switch_page("pages/2_QoE_Score.py")
+    if st.button("AI Decision Engine", use_container_width=True): st.switch_page("pages/3_AI_Decision_Engine.py")
+    if st.button("AI Copilot",         use_container_width=True): pass
+    if st.button("Analyse de Logs",    use_container_width=True): st.switch_page("pages/5_Analyse_Logs.py")
+    if st.button("Demo Interactive",   use_container_width=True): st.switch_page("pages/0_Demo.py")
+    if is_org_admin():
+        if st.button("Gestion d'equipe", use_container_width=True): st.switch_page("pages/6_Team_Management.py")
+    if is_super_admin():
+        if st.button("Admin ABIDSON", use_container_width=True): st.switch_page("pages/9_Admin_ABIDSON.py")
+
     st.divider()
-    st.markdown("**Paramètres Copilot**")
-    model_choice = st.selectbox("Modèle", ["claude-sonnet-4-20250514", "claude-haiku-4-5-20251001"])
-    max_tokens   = st.slider("Longueur réponse", 200, 2000, 800, 100)
-    inject_live  = st.toggle("Injecter métriques live", value=True)
+    st.markdown("**Parametres**")
+    MODEL_OPTIONS = {
+        "Standard (recommande)": "claude-sonnet-4-6",
+        "Rapide":                "claude-haiku-4-5-20251001",
+    }
+    model_label  = st.selectbox("Modele IA", list(MODEL_OPTIONS.keys()))
+    model_choice = MODEL_OPTIONS[model_label]
+    max_tokens   = st.slider("Longueur reponse", 200, 2000, 800, 100)
+    inject_live  = st.toggle("Injecter metriques live", value=True)
     if st.button("🗑 Effacer la conversation", use_container_width=True):
         st.session_state["messages"] = []
         st.rerun()
@@ -58,31 +71,31 @@ def build_system_prompt(metrics: dict, qoe: dict) -> str:
     cdn_str   = ", ".join([f"{k}: {v}%" for k, v in metrics.get("cdn_health", {}).items()])
     degraded  = ", ".join(degraded_cdns) if degraded_cdns else "aucun"
 
-    return f"""Tu es le Copilot IA de StreamAnalytics Pro, une plateforme de monitoring streaming temps réel.
-Tu es un expert en streaming vidéo (HLS/DASH), CDN, encodage, QoE (Quality of Experience) et infrastructure.
-Tu assistes l'opérateur avec des réponses concises, précises et actionnables.
+    return f"""Tu es le Copilot IA de StreamAnalytics Pro, une plateforme de monitoring streaming temps reel.
+Tu es un expert en streaming video (HLS/DASH), CDN, encodage, QoE (Quality of Experience) et infrastructure.
+Tu assistes l'operateur avec des reponses concises, precises et actionnables.
 
 ## Contexte live actuel ({metrics['timestamp'].strftime('%H:%M:%S')})
 - Viewers actifs : {metrics['viewers']:,}
 - Bitrate moyen : {metrics['bitrate_avg']} Mbps
 - Taux rebuffering : {metrics['rebuffer_rate']}%
 - Latence P95 : {metrics['latency_p95']} s
-- Délai démarrage : {metrics['startup_time']} s
+- Delai demarrage : {metrics['startup_time']} s
 - Taux d'erreur : {metrics['error_rate']}%
 - CDN Health : {cdn_str}
-- CDN dégradés : {degraded}
+- CDN degrades : {degraded}
 
 ## Score QoE
 - Score global : {qoe['global']}/100 ({qoe['label']})
 - Dimensions faibles : {weak_str}
 
-## Règles de réponse
-- Réponds TOUJOURS en français
+## Regles de reponse
+- Reponds TOUJOURS en francais
 - Sois direct et actionnable (bullet points si liste > 3 items)
-- Cite les métriques live quand c'est pertinent
-- Pour les recommandations CDN, propose des alternatives concrètes
+- Cite les metriques live quand c'est pertinent
+- Pour les recommandations CDN, propose des alternatives concretes
 - Termine par une question de suivi si c'est utile
-- N'invente pas de métriques absentes du contexte
+- N'invente pas de metriques absentes du contexte
 """
 
 # ── Init session ───────────────────────────────────────────────────────────────
@@ -91,14 +104,14 @@ if "messages" not in st.session_state:
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown("## 🤖 AI Copilot")
-st.markdown("""<span style='background:#7F77DD;color:white;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;'>PREMIUM · Powered by Claude</span>""", unsafe_allow_html=True)
+st.markdown("""<span style='background:#7F77DD;color:white;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;'>PREMIUM</span>""", unsafe_allow_html=True)
 
 # Live snapshot
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("QoE", f"{qoe['global']}/100",  qoe["label"].split()[0])
 col2.metric("Viewers", f"{metrics['viewers']:,}", "+12%")
 col3.metric("Rebuffering", f"{metrics['rebuffer_rate']}%", delta_color="inverse")
-col4.metric("CDN dégradés", f"{len(degraded_cdns)}", delta_color="inverse")
+col4.metric("CDN degrades", f"{len(degraded_cdns)}", delta_color="inverse")
 
 st.markdown("---")
 
@@ -108,8 +121,8 @@ quick_cols = st.columns(4)
 quick_questions = [
     "Pourquoi mon rebuffering monte ce soir ?",
     "Quel CDN est le plus performant en ce moment ?",
-    "Comment améliorer mon QoE de 10 points ?",
-    "Préds le trafic pour les 4 prochaines heures",
+    "Comment ameliorer mon QoE de 10 points ?",
+    "Predis le trafic pour les 4 prochaines heures",
 ]
 for i, (col, q) in enumerate(zip(quick_cols, quick_questions)):
     with col:
@@ -120,16 +133,11 @@ for i, (col, q) in enumerate(zip(quick_cols, quick_questions)):
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ── Prefill depuis Decision Engine ────────────────────────────────────────────
-if "copilot_prefill" in st.session_state and st.session_state["copilot_prefill"]:
+if st.session_state.get("copilot_prefill"):
     prefill = st.session_state.pop("copilot_prefill")
     if not any(m["content"] == prefill for m in st.session_state["messages"]):
         st.session_state["messages"].append({"role": "user", "content": prefill})
         st.rerun()
-
-# ── Affichage historique ──────────────────────────────────────────────────────
-for msg in st.session_state["messages"]:
-    with st.chat_message(msg["role"], avatar="🤖" if msg["role"] == "assistant" else "👤"):
-        st.markdown(msg["content"])
 
 # ── Message d'accueil si vide ─────────────────────────────────────────────────
 if not st.session_state["messages"]:
@@ -137,38 +145,43 @@ if not st.session_state["messages"]:
         st.markdown(f"""
 Bonjour ! Je suis votre **Copilot IA StreamAnalytics**.
 
-Je surveille vos streams en temps réel. Voici ce que je vois maintenant :
+Je surveille vos streams en temps reel. Voici ce que je vois maintenant :
 - **QoE Global : {qoe['global']}/100** — {qoe['label']}
-- **{metrics['viewers']:,} viewers actifs** · Rebuffering à {metrics['rebuffer_rate']}%
-{f"- ⚠️ CDN dégradés : **{', '.join(degraded_cdns)}**" if degraded_cdns else "- ✅ Tous les CDN sont opérationnels"}
+- **{metrics['viewers']:,} viewers actifs** · Rebuffering a {metrics['rebuffer_rate']}%
+{f"- ⚠️ CDN degrades : **{', '.join(degraded_cdns)}**" if degraded_cdns else "- ✅ Tous les CDN sont operationnels"}
 
 Comment puis-je vous aider ?
         """)
 
-# ── Chat input + appel API ────────────────────────────────────────────────────
-user_input = st.chat_input("Posez votre question à l'AI Copilot...")
+# ── Affichage historique ──────────────────────────────────────────────────────
+for msg in st.session_state["messages"]:
+    with st.chat_message(msg["role"], avatar="🤖" if msg["role"] == "assistant" else "👤"):
+        st.markdown(msg["content"])
 
+# ── Chat input ────────────────────────────────────────────────────────────────
+user_input = st.chat_input("Posez votre question a l'AI Copilot...")
 if user_input:
     st.session_state["messages"].append({"role": "user", "content": user_input})
-    with st.chat_message("user", avatar="👤"):
-        st.markdown(user_input)
+    st.rerun()
 
+# ── Generation de la reponse si le dernier message est de l'utilisateur ────────
+# Ce bloc gere TOUTES les sources de message utilisateur :
+# chat_input, questions rapides, prefill depuis Decision Engine.
+if st.session_state["messages"] and st.session_state["messages"][-1]["role"] == "user":
     with st.chat_message("assistant", avatar="🤖"):
         with st.spinner("Analyse en cours..."):
             try:
-                # Récupérer la clé API depuis les secrets Streamlit
                 api_key = st.secrets.get("ANTHROPIC_API_KEY", None)
                 if not api_key:
-                    st.error("⚠️ Clé API Anthropic manquante. Ajoutez ANTHROPIC_API_KEY dans vos secrets Streamlit.")
+                    st.error("⚠️ Cle API manquante. Contactez l'administrateur de la plateforme.")
                     st.stop()
 
                 client = anthropic.Anthropic(api_key=api_key)
 
                 system = build_system_prompt(metrics, qoe) if inject_live else (
-                    "Tu es un expert streaming vidéo. Réponds en français, de manière concise et technique."
+                    "Tu es un expert streaming video. Reponds en francais, de maniere concise et technique."
                 )
 
-                # Streaming de la réponse
                 response_placeholder = st.empty()
                 full_response = ""
 
@@ -189,8 +202,10 @@ if user_input:
                 st.session_state["messages"].append({"role": "assistant", "content": full_response})
 
             except anthropic.AuthenticationError:
-                st.error("❌ Clé API invalide. Vérifiez votre ANTHROPIC_API_KEY dans les secrets.")
+                st.error("❌ Cle API invalide. Verifiez ANTHROPIC_API_KEY dans les secrets Streamlit Cloud — elle doit commencer par sk-ant-api03-...")
+            except anthropic.NotFoundError:
+                st.error("❌ Modele introuvable. Verifiez le nom du modele configure.")
             except anthropic.RateLimitError:
-                st.error("⏳ Limite de débit atteinte. Réessayez dans quelques secondes.")
+                st.error("⏳ Limite de debit atteinte. Reessayez dans quelques secondes.")
             except Exception as e:
                 st.error(f"Erreur : {str(e)}")
