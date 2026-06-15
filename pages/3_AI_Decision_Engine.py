@@ -39,10 +39,10 @@ with st.sidebar:
     show_sidebar_user() 
     
     st.divider()
-    if st.button("📊 Dashboard",          use_container_width=True): st.switch_page("pages/1_📊_Dashboard.py")
-    if st.button("🎯 QoE Score",          use_container_width=True): st.switch_page("pages/2_🎯_QoE_Score.py")
+    if st.button("📊 Dashboard",          use_container_width=True): st.switch_page("pages/1_Dashboard.py")
+    if st.button("🎯 QoE Score",          use_container_width=True): st.switch_page("pages/2_QoE_Score.py")
     if st.button("🧠 AI Decision Engine", use_container_width=True): pass
-    if st.button("🤖 AI Copilot",         use_container_width=True): st.switch_page("pages/4_🤖_AI_Copilot.py")
+    if st.button("🤖 AI Copilot",         use_container_width=True): st.switch_page("pages/4_AI_Copilot.py")
     st.divider()
     st.markdown("**Seuils d'alerte**")
     thresh_rebuffer = st.slider("Rebuffering max (%)", 0.5, 3.0, 1.0, 0.1)
@@ -137,7 +137,7 @@ for i, dec in enumerate(decisions):
     with col_b:
         if st.button(f"🤖 Demander au Copilot", key=f"copilot_{i}", use_container_width=True):
             st.session_state["copilot_prefill"] = dec.copilot_prompt
-            st.switch_page("pages/4_🤖_AI_Copilot.py")
+            st.switch_page("pages/4_AI_Copilot.py")
     with col_c:
         if st.button(f"✕ Ignorer", key=f"dismiss_{i}", use_container_width=True):
             st.toast("Recommandation ignorée", icon="✕")
@@ -153,4 +153,4 @@ with col_r1:
         st.rerun()
 with col_r2:
     if st.button("🤖 Ouvrir le Copilot AI complet →", use_container_width=True):
-        st.switch_page("pages/4_🤖_AI_Copilot.py")
+        st.switch_page("pages/4_AI_Copilot.py")

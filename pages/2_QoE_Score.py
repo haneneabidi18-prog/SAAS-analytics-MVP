@@ -28,10 +28,10 @@ with st.sidebar:
     show_sidebar_user() 
     
     st.divider()
-    if st.button("📊 Dashboard",          use_container_width=True): st.switch_page("pages/1_📊_Dashboard.py")
+    if st.button("📊 Dashboard",          use_container_width=True): st.switch_page("pages/1_Dashboard.py")
     if st.button("🎯 QoE Score",          use_container_width=True): pass
-    if st.button("🧠 AI Decision Engine", use_container_width=True): st.switch_page("pages/3_🧠_AI_Decision_Engine.py")
-    if st.button("🤖 AI Copilot",         use_container_width=True): st.switch_page("pages/4_🤖_AI_Copilot.py")
+    if st.button("🧠 AI Decision Engine", use_container_width=True): st.switch_page("pages/3_AI_Decision_Engine.py")
+    if st.button("🤖 AI Copilot",         use_container_width=True): st.switch_page("pages/4_AI_Copilot.py")
 
 # ── Data ──────────────────────────────────────────────────────────────────────
 metrics = get_live_metrics()
@@ -195,4 +195,4 @@ if st.button("🤖 Analyser avec le Copilot AI →", use_container_width=True):
         f"La dimension la plus faible est '{min(dims, key=dims.get)}' à {min(dims.values()):.0f}/100. "
         f"Que recommandes-tu pour l'améliorer en priorité ?"
     )
-    st.switch_page("pages/4_🤖_AI_Copilot.py")
+    st.switch_page("pages/4_AI_Copilot.py")
