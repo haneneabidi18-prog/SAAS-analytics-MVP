@@ -1,19 +1,19 @@
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
+from utils.auth import require_premium, show_sidebar_user, is_org_admin, is_super_admin
+require_premium("Analyse de Logs")
 
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
-import anthropic
-from utils.auth import require_premium, show_sidebar_user
-require_premium("QoE Score")   # ← remplace par le nom de la page
 
-from utils.log_parser import (
+from utils.log_parser  import (
     parse_uploaded_file, get_summary_stats,
     compute_qoe_from_logs, build_ai_context, ALL_METRICS
 )
+from utils.ai_provider import get_provider, stream_response, friendly_error
 
 st.set_page_config(
     page_title="Analyse de Logs · StreamAnalytics",
@@ -81,15 +81,18 @@ div[data-testid="metric-container"] [data-testid="stMetricValue"] {
 with st.sidebar:
     st.markdown("<div style='text-align:center;padding:15px 0 5px;font-size:22px;'>📡</div>", unsafe_allow_html=True)
     st.markdown("<div style='text-align:center;font-size:18px;font-weight:700;color:#7F77DD;'>StreamAnalytics</div>", unsafe_allow_html=True)
-    show_sidebar_user() 
-    
+    show_sidebar_user()
     st.divider()
     if st.button("Dashboard",           use_container_width=True): st.switch_page("pages/1_Dashboard.py")
     if st.button("QoE Score",           use_container_width=True): st.switch_page("pages/2_QoE_Score.py")
     if st.button("AI Decision Engine",  use_container_width=True): st.switch_page("pages/3_AI_Decision_Engine.py")
     if st.button("AI Copilot",          use_container_width=True): st.switch_page("pages/4_AI_Copilot.py")
-    if st.button("Demo Interactive",    use_container_width=True): st.switch_page("pages/0_Demo.py")
     if st.button("Analyse de Logs",     use_container_width=True): pass
+    if st.button("Demo Interactive",    use_container_width=True): st.switch_page("pages/0_Demo.py")
+    if is_org_admin():
+        if st.button("Gestion d'equipe", use_container_width=True): st.switch_page("pages/6_Team_Management.py")
+    if is_super_admin():
+        if st.button("Admin ABIDSON", use_container_width=True): st.switch_page("pages/9_Admin_ABIDSON.py")
     st.divider()
     st.markdown("**Options d'analyse**")
     show_raw     = st.toggle("Afficher les données brutes", value=False)
@@ -414,73 +417,63 @@ for msg in st.session_state["log_messages"]:
 user_q = st.chat_input("Posez une question sur vos logs...")
 if user_q:
     st.session_state["log_messages"].append({"role": "user", "content": user_q})
-    with st.chat_message("user", avatar="👤"):
-        st.markdown(user_q)
+    st.rerun()
 
+# Generation de la reponse — gere chat_input ET les 3 boutons d'analyse automatique
 if st.session_state["log_messages"] and st.session_state["log_messages"][-1]["role"] == "user":
     with st.chat_message("assistant", avatar="🤖"):
         with st.spinner("Analyse des logs en cours..."):
-            try:
-                api_key = st.secrets.get("ANTHROPIC_API_KEY", None)
-                if not api_key:
-                    # Mode démo sans clé API
-                    last_q = st.session_state["log_messages"][-1]["content"].lower()
-                    if "anomalie" in last_q or "incident" in last_q:
-                        resp = (
-                            f"**Anomalies détectées dans {filename} :**\n\n"
-                            f"1. **Pic de rebuffering** — Le taux moyen est à {stats.get('rebuffer_rate', {}).get('mean', 'N/A')}% "
-                            f"avec un P95 à {stats.get('rebuffer_rate', {}).get('p95', 'N/A')}%. "
-                            f"Dépasse le seuil critique de 2% sur certaines plages.\n\n"
-                            f"2. **Dégradation bitrate** — Bitrate moyen à {stats.get('bitrate', {}).get('mean', 'N/A')} Mbps, "
-                            f"en dessous de l'optimal (5+ Mbps).\n\n"
-                            f"3. **Latence élevée** — P95 à {stats.get('latency', {}).get('p95', 'N/A')}s. "
-                            f"Impacte la sync audio/vidéo.\n\n"
-                            f"**Action recommandée :** Connectez votre clé API Anthropic pour une analyse IA complète et précise."
-                        )
-                    else:
-                        resp = (
-                            f"**Résumé de l'analyse de {filename} :**\n\n"
-                            f"- **{stats['rows']:,} événements** analysés\n"
-                            f"- **QoE Global : {qoe['global']}/100** — {qoe['label']}\n"
-                            f"- Métriques disponibles : {', '.join(available_metrics)}\n\n"
-                            f"La dimension la plus dégradée est **{min(qoe['dimensions'], key=qoe['dimensions'].get)}** "
-                            f"à {min(qoe['dimensions'].values()):.0f}/100.\n\n"
-                            f"💡 *Ajoutez votre clé API Anthropic dans les secrets Streamlit pour une analyse IA complète.*"
-                        )
-                    st.markdown(resp)
-                    st.session_state["log_messages"].append({"role": "assistant", "content": resp})
+            if not get_provider():
+                # Mode demo sans cle IA configuree
+                last_q = st.session_state["log_messages"][-1]["content"].lower()
+                if "anomalie" in last_q or "incident" in last_q:
+                    resp = (
+                        f"**Anomalies detectees dans {filename} :**\n\n"
+                        f"1. **Pic de rebuffering** — Le taux moyen est a {stats.get('rebuffer_rate', {}).get('mean', 'N/A')}% "
+                        f"avec un P95 a {stats.get('rebuffer_rate', {}).get('p95', 'N/A')}%. "
+                        f"Depasse le seuil critique de 2% sur certaines plages.\n\n"
+                        f"2. **Degradation bitrate** — Bitrate moyen a {stats.get('bitrate', {}).get('mean', 'N/A')} Mbps, "
+                        f"en dessous de l'optimal (5+ Mbps).\n\n"
+                        f"3. **Latence elevee** — P95 a {stats.get('latency', {}).get('p95', 'N/A')}s. "
+                        f"Impacte la sync audio/video.\n\n"
+                        f"**Action recommandee :** Configurez une cle IA (gratuite) pour une analyse complete et precise."
+                    )
                 else:
-                    client = anthropic.Anthropic(api_key=api_key)
-                    system = f"""Tu es le Copilot IA de StreamAnalytics Pro, expert en analyse de logs streaming vidéo.
-Tu analyses des logs uploadés par un client et fournis des insights actionnables.
+                    resp = (
+                        f"**Resume de l'analyse de {filename} :**\n\n"
+                        f"- **{stats['rows']:,} evenements** analyses\n"
+                        f"- **QoE Global : {qoe['global']}/100** — {qoe['label']}\n"
+                        f"- Metriques disponibles : {', '.join(available_metrics)}\n\n"
+                        f"La dimension la plus degradee est **{min(qoe['dimensions'], key=qoe['dimensions'].get)}** "
+                        f"a {min(qoe['dimensions'].values()):.0f}/100.\n\n"
+                        f"💡 *Configurez une cle IA (gratuite) dans les secrets pour une analyse complete.*"
+                    )
+                st.markdown(resp)
+                st.session_state["log_messages"].append({"role": "assistant", "content": resp})
+            else:
+                system = f"""Tu es le Copilot IA de StreamAnalytics Pro, expert en analyse de logs streaming video.
+Tu analyses des logs uploades par un client et fournis des insights actionnables.
 
-=== DONNÉES DU FICHIER ANALYSÉ ===
+=== DONNEES DU FICHIER ANALYSE ===
 {ai_context}
 
 === INSTRUCTIONS ===
-- Réponds en français, de manière structurée et professionnelle
-- Cite les métriques concrètes de ce fichier dans tes réponses
+- Reponds en francais, de maniere structuree et professionnelle
+- Cite les metriques concretes de ce fichier dans tes reponses
 - Identifie les anomalies, tendances et recommandations prioritaires
 - Quantifie l'impact sur le QoE quand c'est possible
-- Sois précis sur les timestamps si la donnée est disponible
+- Sois precis sur les timestamps si la donnee est disponible
 """
-                    placeholder   = st.empty()
-                    full_response = ""
-                    with client.messages.stream(
-                        AI_MODEL = os.getenv("AI_MODEL", "claude-sonnet-4-20250514")
-                        model=AI_MODEL
-                        #model="claude-sonnet-4-20250514", max_tokens=1200,
-                        system=system,
-                        messages=[{"role": m["role"], "content": m["content"]}
-                                  for m in st.session_state["log_messages"]],
-                    ) as stream:
-                        for text in stream.text_stream:
-                            full_response += text
-                            placeholder.markdown(full_response + "▌")
+                placeholder   = st.empty()
+                full_response = ""
+                try:
+                    for chunk in stream_response(st.session_state["log_messages"], system, "standard"):
+                        full_response += chunk
+                        placeholder.markdown(full_response + "▌")
                     placeholder.markdown(full_response)
                     st.session_state["log_messages"].append({"role": "assistant", "content": full_response})
-            except Exception as e:
-                st.error(f"Erreur API : {e}")
+                except Exception as e:
+                    st.error(friendly_error(e))
 
 # Bouton reset chat
 if st.session_state["log_messages"]:
