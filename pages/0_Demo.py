@@ -5,9 +5,10 @@ sys.path.append(str(Path(__file__).parent.parent))
 import streamlit as st
 import plotly.graph_objects as go
 import time
-import anthropic
-from utils.auth import require_auth, show_sidebar_user
+from utils.auth import require_auth, show_sidebar_user, is_org_admin, is_super_admin
 require_auth()
+
+from utils.ai_provider import get_provider, stream_response, friendly_error
 
 from utils.demo_scenarios import INDUSTRIES, SCENARIOS, get_roi_data
 
@@ -140,6 +141,10 @@ with st.sidebar:
     if st.button("AI Copilot",          use_container_width=True): st.switch_page("pages/4_AI_Copilot.py")
     if st.button("Analyse de Logs",     use_container_width=True): st.switch_page("pages/5_Analyse_Logs.py")
     if st.button("Demo Interactive",    use_container_width=True): pass
+    if is_org_admin():
+        if st.button("Gestion d'equipe", use_container_width=True): st.switch_page("pages/6_Team_Management.py")
+    if is_super_admin():
+        if st.button("Admin ABIDSON", use_container_width=True): st.switch_page("pages/9_Admin_ABIDSON.py")
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -315,42 +320,35 @@ with col_chat:
 
         with st.chat_message("assistant", avatar="🤖"):
             with st.spinner("Analyse en cours..."):
-                try:
-                    api_key = st.secrets.get("ANTHROPIC_API_KEY", None)
-                    if not api_key:
-                        # Mode démo sans clé API
-                        demo_responses = {
-                            "cdn": f"Sur le scénario '{scenario['name']}', CDN-EU1 est à {m['cdn_eu1']}%. Je recommande le basculement immédiat vers CDN-FR2 qui est à {m['cdn_fr2']}%.",
-                            "qoe": f"Le QoE est actuellement à {m['qoe']}/100. La dimension la plus dégradée est le rebuffering ({m['rebuffer']}%). Action prioritaire : activer l'ABR adaptatif.",
-                            "roi": f"L'impact financier estimé est de {roi['revenue_loss']:,}€/heure. Avec StreamAnalytics Pro, le MTTR passe de {roi['mttr_before']}min à {roi['mttr_after']}min, soit {roi['revenue_saved']:,}€ économisés.",
-                        }
-                        resp = next((v for k, v in demo_responses.items() if k in user_q.lower()), 
-                                    f"Basé sur les métriques actuelles (QoE: {m['qoe']}/100, Rebuffering: {m['rebuffer']}%), voici mon analyse pour le scénario '{scenario['name']}' dans le secteur {industry['name']} : l'action prioritaire est d'adresser le rebuffering qui impacte {roi['impact_viewers']:,} viewers.")
-                        st.markdown(resp)
-                        st.session_state["demo_messages"].append({"role": "assistant", "content": resp})
-                    else:
-                        client  = anthropic.Anthropic(api_key=api_key)
-                        system  = f"""Tu es le Copilot IA de StreamAnalytics Pro, expert streaming vidéo.
+                if not get_provider():
+                    # Mode demo sans cle IA configuree
+                    demo_responses = {
+                        "cdn": f"Sur le scénario '{scenario['name']}', CDN-EU1 est à {m['cdn_eu1']}%. Je recommande le basculement immédiat vers CDN-FR2 qui est à {m['cdn_fr2']}%.",
+                        "qoe": f"Le QoE est actuellement à {m['qoe']}/100. La dimension la plus dégradée est le rebuffering ({m['rebuffer']}%). Action prioritaire : activer l'ABR adaptatif.",
+                        "roi": f"L'impact financier estimé est de {roi['revenue_loss']:,}€/heure. Avec StreamAnalytics Pro, le MTTR passe de {roi['mttr_before']}min à {roi['mttr_after']}min, soit {roi['revenue_saved']:,}€ économisés.",
+                    }
+                    resp = next((v for k, v in demo_responses.items() if k in user_q.lower()),
+                                f"Basé sur les métriques actuelles (QoE: {m['qoe']}/100, Rebuffering: {m['rebuffer']}%), voici mon analyse pour le scénario '{scenario['name']}' dans le secteur {industry['name']} : l'action prioritaire est d'adresser le rebuffering qui impacte {roi['impact_viewers']:,} viewers.")
+                    st.markdown(resp)
+                    st.session_state["demo_messages"].append({"role": "assistant", "content": resp})
+                else:
+                    system = f"""Tu es le Copilot IA de StreamAnalytics Pro, expert streaming vidéo.
 Contexte démo : secteur {industry['name']}, scénario '{scenario['name']}'.
 Métriques live : QoE={m['qoe']}/100, rebuffering={m['rebuffer']}%, bitrate={m['bitrate']}Mbps, latence={m['latency']}s.
 CDN-EU1={m['cdn_eu1']}%, CDN-FR2={m['cdn_fr2']}%.
 Viewers impactés : {roi['impact_viewers']:,}. Perte estimée : {roi['revenue_loss']:,}€/h.
 Réponds en français, de manière concise et professionnelle. Tu es en mode démo commerciale."""
 
-                        placeholder  = st.empty()
-                        full_response = ""
-                        with client.messages.stream(
-                            model="claude-sonnet-4-20250514", max_tokens=600,
-                            system=system,
-                            messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state["demo_messages"]],
-                        ) as stream:
-                            for text in stream.text_stream:
-                                full_response += text
-                                placeholder.markdown(full_response + "▌")
+                    placeholder   = st.empty()
+                    full_response = ""
+                    try:
+                        for chunk in stream_response(st.session_state["demo_messages"], system, "standard"):
+                            full_response += chunk
+                            placeholder.markdown(full_response + "▌")
                         placeholder.markdown(full_response)
                         st.session_state["demo_messages"].append({"role": "assistant", "content": full_response})
-                except Exception as e:
-                    st.error(f"Erreur: {e}")
+                    except Exception as e:
+                        st.error(friendly_error(e))
 
 with col_roi:
     st.markdown('<div class="section-title">Impact & ROI</div>', unsafe_allow_html=True)
