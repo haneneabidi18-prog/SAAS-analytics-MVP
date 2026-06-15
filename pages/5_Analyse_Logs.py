@@ -467,7 +467,9 @@ Tu analyses des logs uploadés par un client et fournis des insights actionnable
                     placeholder   = st.empty()
                     full_response = ""
                     with client.messages.stream(
-                        model="claude-sonnet-4-20250514", max_tokens=1200,
+                        AI_MODEL = os.getenv("AI_MODEL", "claude-sonnet-4-20250514")
+                        model=AI_MODEL
+                        #model="claude-sonnet-4-20250514", max_tokens=1200,
                         system=system,
                         messages=[{"role": m["role"], "content": m["content"]}
                                   for m in st.session_state["log_messages"]],

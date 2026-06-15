@@ -9,7 +9,7 @@ Plateforme SaaS de monitoring streaming temps réel avec fonctionnalités AI pre
 | 📊 Dashboard Live | Métriques temps réel — viewers, bitrate, CDN, latence | ✅ |
 | 🎯 QoE Score | Score qualité pondéré sur 6 dimensions | ✅ PREMIUM |
 | 🧠 AI Decision Engine | Recommandations intelligentes et actionnables | ✅ PREMIUM |
-| 🤖 AI Copilot | Chat IA contextuel avec métriques live (Claude) | ✅ PREMIUM |
+| 🤖 AI Copilot | Chat IA contextuel avec métriques live  | ✅ PREMIUM |
 
 ## Structure du projet
 
@@ -20,7 +20,7 @@ streamlit-analytics/
 │   ├── 1_📊_Dashboard.py            # Dashboard principal
 │   ├── 2_🎯_QoE_Score.py            # Score QoE détaillé
 │   ├── 3_🧠_AI_Decision_Engine.py   # Engine de décisions IA
-│   └── 4_🤖_AI_Copilot.py          # Chat avec Claude
+│   └── 4_🤖_AI_Copilot.py           # AI Copilot
 ├── utils/
 │   ├── data.py                      # Données & simulation
 │   ├── qoe.py                       # Calcul du score QoE
@@ -74,4 +74,4 @@ Remplacez les fonctions dans `utils/data.py` par vos appels API réels :
 - `get_cdn_performance()` → API de votre CDN provider
 
 ---
-Powered by [Claude AI](https://anthropic.com) · Streamlit · Plotly
+Powered by [StreamAnalytics AI] · Streamlit · Plotly
