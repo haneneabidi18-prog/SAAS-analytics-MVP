@@ -16,7 +16,38 @@ def _get_seed() -> int:
     return int(datetime.now().timestamp() // REFRESH_INTERVAL)
 
 
+def _resolve_org_id() -> str:
+    """Recupere l'org_id de l'utilisateur connecte (sinon 'demo-org')."""
+    try:
+        import streamlit as st
+        org = st.session_state.get("org")
+        if org and org.get("id"):
+            return org["id"]
+    except Exception:
+        pass
+    return "demo-org"
+
+
 def get_live_metrics() -> dict:
+    """
+    Retourne les metriques live.
+    1. Tente de lire les vraies donnees depuis ClickHouse (si configure + accessible)
+    2. Sinon, retombe sur la simulation (demo / dev)
+    """
+    # 1. Donnees reelles via ClickHouse
+    try:
+        from utils.clickhouse_reader import get_live_metrics_real
+        real = get_live_metrics_real(_resolve_org_id())
+        if real:
+            return real
+    except Exception:
+        pass
+
+    # 2. Fallback simulation
+    return _simulate_live_metrics()
+
+
+def _simulate_live_metrics() -> dict:
     """
     Simule les metriques live.
     Seed base sur le temps -> valeurs IDENTIQUES sur toutes les pages

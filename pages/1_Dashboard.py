@@ -10,6 +10,11 @@ require_auth()
 
 from utils.data import get_live_metrics, get_timeseries, get_cdn_performance, get_region_breakdown, get_device_breakdown
 from utils.qoe  import compute_qoe
+from utils.clickhouse_reader import is_available
+if is_available():
+    st.success("🟢 Source : ClickHouse (données réelles de l'agent)")
+else:
+    st.warning("🟡 Source : simulation (ClickHouse non joignable)")
 
 st.set_page_config(page_title="Dashboard · StreamAnalytics", page_icon="📊", layout="wide")
 
